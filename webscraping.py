@@ -5,9 +5,31 @@ from urllib.parse import urljoin
 import re
 
 
+
 # Resetting the data file when rerunning the script to ensure no duplicates
 with open("data.txt", "w") as file:
     pass
+
+# Returns all URLs from a sitemap, unfiltered
+def get_urls_from_sitemap(sitemap_url):
+    response = requests.get(sitemap_url)
+    soup = BeautifulSoup(response.content)
+    urls = [loc.text for loc in soup.find_all('loc')]
+    return urls
+
+# Based on prev. function to filter URLs
+def filter_urls_by_section_and_date(urls, section):
+    filtered_urls = []
+
+    year_pattern = re.compile(r'/20(?:1[5-9]|2[0-4])/')  # First part of the pattern chooses 201 then anynumber 0-9, second part chooses 202 then any number 0-4
+    
+    for url in urls:
+        if section in url:
+            match = year_pattern.search(url)
+            if match:
+                filtered_urls.append(url)
+    
+    return filtered_urls
 
 # Retrieving all articles from sections of a website
 def get_article_urls(domain_section):
@@ -31,6 +53,8 @@ def get_article_urls(domain_section):
     list(set(urls))
     return urls
 
+
+
 # Defining a function to scape the paragraph data from a website
 def get_article_text(url):
     try:
@@ -53,13 +77,16 @@ def get_article_text(url):
         return None
 
 
-domain_sections = ['https://www.tampabay.com/life-culture/']
+
+sitemap_sections = {'https://www.tampabay.com/resources/sitemaps/tampa-bay-times-content-sitemap-48.xml':'/life-culture/'}
+sitemap_sections.items()
 
 def main():
-    for domain_section in domain_sections:
-        article_urls = get_article_urls(domain_section)
+    for sitemap, section in sitemap_sections.items():
+        urls = get_urls_from_sitemap(sitemap)
+        filtered_urls = filter_urls_by_section_and_date(urls, section)
 
-        for url in article_urls:
+        for url in filtered_urls:
             print(f"Scraping article: {url}")
             article_text = get_article_text(url)
             if article_text:
