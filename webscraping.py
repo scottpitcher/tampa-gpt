@@ -4,6 +4,8 @@ import time
 from urllib.parse import urljoin
 import re
 
+
+# Resetting the data file when rerunning the script to ensure no duplicates
 with open("data.txt", "w") as file:
     pass
 
@@ -16,22 +18,26 @@ def get_article_urls(domain_section):
     article_links = soup.find_all('a', href = True)
     
     # Creating a pattern to ensure only articles from 2010:2024 are chosen
-    year_pattern = re.compile(r'/20(?:1[0-9]|2[0-4])/')  # First part of the pattern chooses 201 then anynumber 0-9, second part chooses 202 then any number 0-4
+    year_pattern = re.compile(r'/20(?:1[5-9]|2[0-4])/')  # First part of the pattern chooses 201 then anynumber 0-9, second part chooses 202 then any number 0-4
 
 
     # Adjust URLs for absolute and relative, utilising the urljoin's abilities
     urls = [urljoin(domain_section, link['href']) for link in article_links]
     
-    # Filter URLs to keep only those that indeed start with the desired domain_section
+    # Filter URLs to keep only those that are articles (contain a year for publ.) and indeed start with the desired domain_section
     urls = [url for url in urls if year_pattern.search(url) and  url.startswith(domain_section)]
     
-    return list(set(urls))
+    # Ensure no duplicate URLs
+    list(set(urls))
+    return urls
 
 # Defining a function to scape the paragraph data from a website
 def get_article_text(url):
     try:
         page = requests.get(url, timeout=5) # Utilising timeout to make sure we are not overloading the server
-        print(f"Status code for main page: {page.status_code}")  # Print status code for debug
+        if page.status_code != 200:
+            print(f"Status code for main page: {page.status_code}")  # Print status code for debug only if it differs
+
         soup = BeautifulSoup(page.text, 'html.parser')
 
         # Retrieving the article's body
