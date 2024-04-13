@@ -3,35 +3,22 @@ import requests
 import time
 from urllib.parse import urljoin
 import re
+import lxml
+import xml
+import boto3
 
+s3 = boto3.client('s3')
+bucket_name = 'tampa-ai'
+file_key = 'data.txt'  
 
+# sitemap_sections = {'https://www.tampabay.com/resources/sitemaps/tampa-bay-times-content-sitemap-48.xml':'https://www.tampabay.com/life-culture/'}
 
+sitemaps = ["https://www.tampabay.com/resources/sitemaps/tampa-bay-times-content-sitemap-48.xml"]
 # Resetting the data file when rerunning the script to ensure no duplicates
 with open("data.txt", "w") as file:
     pass
 
-# Returns all URLs from a sitemap, unfiltered
-def get_urls_from_sitemap(sitemap_url):
-    response = requests.get(sitemap_url)
-    soup = BeautifulSoup(response.content)
-    urls = [loc.text for loc in soup.find_all('loc')]
-    return urls
-
-# Based on prev. function to filter URLs
-def filter_urls_by_section_and_date(urls, section):
-    filtered_urls = []
-
-    year_pattern = re.compile(r'/20(?:1[5-9]|2[0-4])/')  # First part of the pattern chooses 201 then anynumber 0-9, second part chooses 202 then any number 0-4
-    
-    for url in urls:
-        if section in url:
-            match = year_pattern.search(url)
-            if match:
-                filtered_urls.append(url)
-    
-    return filtered_urls
-
-# Retrieving all articles from sections of a website
+# Retrieving all article urls from a website
 def get_article_urls(domain_section):
     page = requests.get(domain_section)
     soup = BeautifulSoup(page.text, 'html.parser')
@@ -42,20 +29,40 @@ def get_article_urls(domain_section):
     # Creating a pattern to ensure only articles from 2010:2024 are chosen
     year_pattern = re.compile(r'/20(?:1[5-9]|2[0-4])/')  # First part of the pattern chooses 201 then anynumber 0-9, second part chooses 202 then any number 0-4
 
-
     # Adjust URLs for absolute and relative, utilising the urljoin's abilities
     urls = [urljoin(domain_section, link['href']) for link in article_links]
     
     # Filter URLs to keep only those that are articles (contain a year for publ.) and indeed start with the desired domain_section
-    urls = [url for url in urls if year_pattern.search(url) and  url.startswith(domain_section)]
+    urls = [url for url in urls if year_pattern.search(url) and url.startswith(domain_section)]
     
     # Ensure no duplicate URLs
     list(set(urls))
     return urls
 
+# Returns all URLs from a sitemap
+def get_urls_from_sitemap(sitemap_url):
+    response = requests.get(sitemap_url, 'xml')
+    soup = BeautifulSoup(response.content)
+    urls = [loc.text for loc in soup.find_all('loc')]
+    for url in urls: 
+        if "/life-culture/" in url:
+            print(url)
+    return urls
+
+urls = get_urls_from_sitemap("https://www.tampabay.com/resources/sitemaps/tampa-bay-times-content-sitemap-48.xml")
+len(urls)
+# Based on prev. function to filter URLs
+def filter_urls_by_section(urls, domain_section):
+    # year_pattern = re.compile(r'/20(?:1[5-9]|2[0-4])/')  # First part of the pattern chooses 201 then anynumber 0-9, second part chooses 202 then any number 0-4
+    
+    # Filter URLs to keep only those that are articles (contain a year for publ.) and indeed start with the desired domain_section
+    filtered_urls = [url for url in urls if url.startswith(domain_section)]
+
+    filtered_urls = list(set(filtered_urls))
+    return filtered_urls
 
 
-# Defining a function to scape the paragraph data from a website
+# Defining a function to scape the paragraph data from a specified website
 def get_article_text(url):
     try:
         page = requests.get(url, timeout=5) # Utilising timeout to make sure we are not overloading the server
@@ -76,24 +83,23 @@ def get_article_text(url):
         print(f"An error occured while attempting to scrape {url}: e")
         return None
 
-
-
-sitemap_sections = {'https://www.tampabay.com/resources/sitemaps/tampa-bay-times-content-sitemap-48.xml':'/life-culture/'}
-sitemap_sections.items()
-
 def main():
-    for sitemap, section in sitemap_sections.items():
+    for sitemap in sitemaps:
         urls = get_urls_from_sitemap(sitemap)
-        filtered_urls = filter_urls_by_section_and_date(urls, section)
-
-        for url in filtered_urls:
+        full_text = ""
+        
+        for url in urls:
             print(f"Scraping article: {url}")
             article_text = get_article_text(url)
             if article_text:
-                with open("data.txt", 'a') as outfile:
-                    outfile.write(f"{article_text}\n\n")
+                full_text += "\n".join(article_text)
             
-            time.sleep(1) # Ensuring not to overload the website's server
+            time.sleep(1)  # To avoid overloading the server
+        
+        # Write directly to S3
+        response = s3.put_object(Body=full_text, Bucket=bucket_name, Key=file_key)
+        print(f"Data written to S3 with response: {response}")
+
     
 if __name__ == "__main__":
     main()
