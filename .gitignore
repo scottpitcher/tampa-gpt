@@ -1,9 +1,15 @@
+# Specific Files
+test.ipynb
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 
 # C extensions
 *.so
+
+# Ignore .env
+.env
 
 # Ignore all text files except requirements.txt
 *.txt

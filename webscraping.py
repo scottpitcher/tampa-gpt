@@ -87,8 +87,11 @@ def main():
     for sitemap in sitemaps:
         urls = get_urls_from_sitemap(sitemap)
         full_text = ""
-        
+        num_urls = len(urls)
         for url in urls:
+            if num_urls%1000==0:
+                print("Web scraping is: ",(urls.index(url)/len(urls))*100,"% \complete \n")
+            
             print(f"Scraping article: {url}")
             article_text = get_article_text(url)
             if article_text:
