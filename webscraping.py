@@ -18,7 +18,7 @@ sitemaps = ["https://www.tampabay.com/resources/sitemaps/tampa-bay-times-content
 with open("data.txt", "w") as file:
     pass
 
-# Retrieving all article urls from a website
+# Retrieving all article urls from a website/sitemap
 def get_article_urls(domain_section):
     page = requests.get(domain_section)
     soup = BeautifulSoup(page.text, 'html.parser')
@@ -77,13 +77,14 @@ def get_article_text(url):
         paragraphs = soup.find_all('p')
          # Iterate through each paragraph, getting the text and appending to the list
         paragraph_texts = [paragraph.get_text() for paragraph in paragraphs]
-        return paragraph_texts
+        headline = soup.find('h1').get_text()
+        return headline, paragraph_texts
     
     except Exception as e:
-        print(f"An error occured while attempting to scrape {url}: e")
+        print(f"An error occured while attempting to scrape {url}: {e}")
         return None
 
-def main():
+def scrape_sitemap():
     for sitemap in sitemaps:
         urls = get_urls_from_sitemap(sitemap)
         full_text = ""
@@ -105,4 +106,25 @@ def main():
 
     
 if __name__ == "__main__":
-    main()
+    while True:
+        choice = input("""
+        Options:
+        Scrape a website? (website)
+        Scrape a sitemap? (sitemap)
+        Exit (exit)
+                    
+        What would you like to do?: """)
+        if choice == "website":
+            url = str(input("input a URL:"))
+            headline, text = get_article_text(url)
+            text = "".join(text)
+            response = s3.put_object(Body=text, Bucket=bucket_name, Key=f"{headline}.txt")
+            print(f"Data written to S3 with response: {response}")
+            break
+        if choice == "exit":
+            break
+        else:
+            print("Incorrect submission, try again \n")
+            pass
+
+
