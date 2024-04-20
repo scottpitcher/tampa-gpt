@@ -118,7 +118,7 @@ if __name__ == "__main__":
             url = str(input("input a URL:"))
             headline, text = get_article_text(url)
             text = "".join(text)
-            response = s3.put_object(Body=text, Bucket=bucket_name, Key=f"{headline}.txt")
+            response = s3.put_object(Body=text, Bucket=bucket_name, Key=f"data/{headline}.txt")
             print(f"Data written to S3 with response: {response}")
             break
         if choice == "exit":
