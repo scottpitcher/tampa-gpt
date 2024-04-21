@@ -3,27 +3,12 @@ from openai import OpenAI
 import os
 import pandas as pd
 
+## Retrieving web-scraped data from AWS S3 bucket
 # Create an S3 client
 s3 = boto3.client('s3')
-
-# Specify the bucket name and the object (file) to download
 bucket_name = 'tampa-ai'
 
-# Specify the filename for the downloaded file
-local_filename = 'downloaded_file'
-
-# Download the file
-file_key = str(input("file key:"))
-
-# To read the file directly into Python without saving, you can use:
-file = s3.get_object(Bucket=bucket_name, Key=f'data/{file_key}')['Body'].read()
-
-# Decode bytes to string and split into lines
-lines = file.decode('utf-8')
-
-with open(f'data/{file_key}','w') as outfile:
-    outfile.write(lines)
-
+# Initializing the openai client for text processing
 client = OpenAI(
     # This is the default and can be omitted
     api_key=os.environ.get("OPENAI_API_KEY"),
@@ -34,7 +19,9 @@ client = OpenAI(
 def break_up_text(text_file):
     new_text = ""
     for line in text_file:
-        new_line = client.chat.completions.create(
+        if len(line) < 10:
+            next
+        chat_completion = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
                 {"role": "system",
@@ -43,14 +30,47 @@ def break_up_text(text_file):
                 
                 {"role": "user", 
                 
-                "content": f""" Here are some examples of questions and answers:
-                1. What is Tampa known for? -> Tampa is known for its vibrant waterfront parks.\n
-                2. When is the best time to visit Tampa? -> The best time is during the spring.
-                Generate a question for the answer: {line}"""
-                
+                "content": f"""The following is an example of a paragraph broken into separate points:
+                Input paragraph: 'Tampa is famous for its vibrant waterfront parks, beautiful sunsets, and lively cultural scene. The best time to visit is during spring.'
+                Output points:
+                Tampa is famous for vibrant waterfront parks.\n
+                Tampa has beautiful sunsets.\n
+                Tampa has a lively cultural scene. \n
+                The best time to visit Tampa is during spring.\n
+
+                Now, please break down this paragraph into separate points of information: {line}"""
                 }
             ]
         )
+        new_line = chat_completion.choices[0].message.content
+        print(f"input:{line}\noutput:{new_line}")
+
         new_text += new_line.join("\n")
     
     return(new_text)
+
+
+
+# Initialising paginator for higher file volumes in bucket
+paginator = s3.get_paginator("list_objects_v2")
+# Getting pages from the bucket
+pages = paginator.paginate(Bucket=bucket_name, Prefix='data/')
+
+def main():
+    for page in pages:
+        for file in page["Contents"]:
+            file_key = file["Key"].split('data/')[-1]
+            print(file_key)
+            file_text = s3.get_object(Bucket=bucket_name, Key=file)['Body'].read()
+            # Decode bytes to string and split into lines
+            lines = file_text.decode('utf-8').split("\n")
+            
+            parsed_text = break_up_text(lines)
+
+            response = s3.put_object(Body = parsed_text, Bucket = bucket_name, Key = f"cleaned_data/{file_key}")
+
+
+
+
+if __name__=="__main__":
+    main()
