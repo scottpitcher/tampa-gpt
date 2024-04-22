@@ -59,14 +59,14 @@ def break_up_text(text):
             if len(line) < 10:
                 continue
             new_lines = text_processing(line)
-            print(f"input:{line}\noutput:{new_lines}")
+            print(f"input:\n{line}\noutput:\n{new_lines}")
             new_text += new_lines       
         
         return(new_text)
     
     elif isinstance(text, str):      
         new_lines = text_processing(text)
-        print(f"input:{text}\noutput:{new_lines}")
+        print(f"input:\n{text}\noutput:\n{new_lines}")
         
         return (new_lines)
     
