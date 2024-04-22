@@ -32,7 +32,7 @@ def text_processing(line):
         Tampa is famous for vibrant waterfront parks.
         Tampa has beautiful sunsets.
         Tampa has a lively cultural scene.
-        The best time to visit Tampa is during spring.
+        The best time to visit Tampa is during spring.       
         Input paragraph: 'New York City, a city within New York State, is the most populated in the country. Even though the city is expensive to live in, there are many things to do there!'
         Output points:
         New York City is a city within New York State.
