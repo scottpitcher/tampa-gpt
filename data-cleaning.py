@@ -21,19 +21,24 @@ def text_processing(line):
     model="gpt-3.5-turbo",
     messages=[
         {"role": "system",
-        "content": """You are a helpful assistant whose goal is 
-        to break up paragraphs into separate lines with indpendent information,
-        ensuring each sentence can be read without needing extra context."""},
-        
+        "content": """You are a helpful assistant whose goal is to break up paragraphs into separate lines with independent information,
+             ensuring each line can be read without needing context from the input or other lines. Each line should start with a clear subject 
+             and avoid using pronouns that refer to previously mentioned subjects."""},        
         {"role": "user", 
         
-        "content": f"""The following is an example of a paragraph broken into separate points:
+        "content": f"""The following are examples of paragraphs broken into separate lines:
         Input paragraph: 'Tampa is famous for its vibrant waterfront parks, beautiful sunsets, and lively cultural scene. The best time to visit is during spring.'
         Output points:
         Tampa is famous for vibrant waterfront parks.
         Tampa has beautiful sunsets.
         Tampa has a lively cultural scene.
         The best time to visit Tampa is during spring.
+        Input paragraph: 'New York City, a city within New York State, is the most populated in the country. Even though the city is expensive to live in, there are many things to do there!'
+        Output points:
+        New York City is a city within New York State.
+        NYC is the most populated city in the United States.
+        NYC is expensive to live in.
+        Despite the high cost of living, there are many things to do in NYC!
 
         Now, please break down this paragraph into independent lines of information: {line}"""
         }
