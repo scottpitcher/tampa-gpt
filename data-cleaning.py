@@ -14,13 +14,7 @@ client = OpenAI(
     api_key=os.environ.get("OPENAI_API_KEY"),
 )
 
-
-# Creating a function to read in the file and break up paragraphs with a pretrained model
-def text_processing(line):
-    chat_completion = client.chat.completions.create(
-    model="gpt-3.5-turbo",
-    messages=[
-        {"role": "system",
+messages = [{"role": "system",
         "content": """You are a helpful assistant whose goal is to break up paragraphs into separate lines with independent information,
              ensuring each line can be read without needing context from the input or other lines. Each line should start with a clear subject 
              and avoid using pronouns that refer to previously mentioned subjects."""},        
@@ -38,19 +32,24 @@ def text_processing(line):
         New York City is a city within New York State.
         NYC is the most populated city in the United States.
         NYC is expensive to live in.
-        Despite the high cost of living, there are many things to do in NYC!
+        Despite the high cost of living, there are many things to do in NYC!"""
+        }]
 
-        Now, please break down this paragraph into independent lines of information: {line}"""
-        }
-    ]
+def text_processing(line):
+    """Creating a function to read in the file and break up paragraphs with a pretrained model"""
+    chat_completion = client.chat.completions.create(
+    model="gpt-3.5-turbo",
+    messages=messages
 )
     new_line = chat_completion.choices[0].message.content
     return new_line
 
 
-# If a list of strings is inputted, it will loop through each element and return it as a full body of text
-# Else if a single string is inputted, it will process that string and return the indidivual information from it
 def break_up_text(text):
+    """
+    If a list of strings is inputted, it will loop through each element and return it as a full body of text
+    Else if a single string is inputted, it will process that string and return the indidivual information from it
+    """
     if isinstance(text, list):
         new_text = ""
         
