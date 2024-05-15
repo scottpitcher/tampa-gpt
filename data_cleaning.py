@@ -3,64 +3,6 @@ from openai import OpenAI
 import os
 import pandas as pd
 
-## Retrieving web-scraped data from AWS S3 bucket
-# Create an S3 client
-s3 = boto3.client('s3')
-bucket_name = 'tampa-ai'
-
-# Initializing the openai client for text processing
-client = OpenAI(
-    # This is the default and can be omitted
-    api_key=os.environ.get("OPENAI_API_KEY"),
-)
-
-message_template = [
-        # Initial system prompt
-        {"role": "system",
-        "content": """You are a helpful assistant whose goal is to read in the user's paragraph and break the paragraph into separate lines of independent information,
-             ensuring each line can be read without context from the input or other lines. Each line should start with a clear subject 
-             and avoid using pronouns that refer to other lines."""
-             },
-           
-        # Example user input 1
-        {"role": "user", 
-        "content": f"Tampa is famous for its vibrant waterfront parks, beautiful sunsets, and lively cultural scene. The best time to visit is during spring."
-        },
-        # Example assistant output 1
-        {"role": "assistant",
-        "content":
-        """Tampa is famous for vibrant waterfront parks.
-        Tampa has beautiful sunsets.
-        Tampa has a lively cultural scene.
-        The best time to visit Tampa is during spring.
-        """
-        },
-        # Example user input 2
-        {"role": "user", 
-        "content": f"New York City, a city within New York State, is the most populated city in the country. Even though the city is expensive to live in, there are many things to do there!"
-        },
-        # Example assistant output2
-        {"role": "assistant",
-        "content":"""New York City is a city within New York State.
-        NYC is the most populated city in the United States.
-        NYC is expensive to live in.
-        Despite the high cost of living, there are many things to do in NYC!
-        """},
-        {"role": "user", 
-        "content": ""}]
-
-def text_processing(line):
-    """Creating a function to read in the file and break up paragraphs with a pretrained model"""
-    messages=message_template.copy()
-    messages[5]["content"] = line
-
-    chat_completion = client.chat.completions.create(
-    model="gpt-3.5-turbo",
-    messages=messages
-    )
-
-    new_line = chat_completion.choices[0].message.content
-    return new_line
 
 
 def break_up_text(text):
