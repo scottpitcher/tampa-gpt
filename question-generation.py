@@ -37,7 +37,6 @@ def generate_questions(responses):
     
     return(prompt_responses)
 
-
 prompt_responses = pd.DataFrame(generate_questions(responses))
 
 prompt_responses.head()

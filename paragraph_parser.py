@@ -4,11 +4,13 @@ import os
 import pandas as pd
 
 # Goal: Create a fine-tuned model of GPT 3.5 that reads in a paragraph of information and generates independent lines of information.
-# Purpose: When preparing data for fine-tuning Tampa.AI model, will need to utilise this model several times; more computationally and financially efficient to fine-tune as compared to few-shot learning
+# Purpose: When preparing text data for fine-tuning Tampa.AI model, we will need to utilise this model several times; more computationally and financially efficient to fine-tune as compared to few-shot learning
 # Steps for this script:
 ## - Create OpenAI client
 ## - Use a pretrained GPT 3.5-turbo model to create examples (10-15 as this task is not too technical) for fine-tuning job
-## - 
+## - Check outputs
+## - Create .jsonl format for fine-tuning with examples
+## - Create fine-tune job and save model for use in data preparation
 
 ## Retrieving web-scraped data from AWS S3 bucket
 # Create an S3 client
@@ -44,6 +46,7 @@ message_template = [
         {"role": "user", 
         "content": ""}]
 
+
 def text_processing(line):
     """Creating a function to read in the file and break up paragraphs with a pretrained model"""
     messages=message_template.copy()
@@ -57,6 +60,11 @@ def text_processing(line):
     new_line = chat_completion.choices[0].message.content
     return new_line
 
-# 
+# Creating examples from paragraphs sourced from 
+paragraphs = []
+
+# Formattng examples for fine-tuning
+system_prompt = message_template[0]["content"]
+print(system_prompt)
 # Using the new text_processing function, we will create e
 
