@@ -2,6 +2,15 @@ from openai import OpenAI
 import os
 import pandas as pd
 
+# Goal: Use the independent lines of information to create prompts for fine-tuning job.
+# Purpose: Final set of preparation for model fine-tuning.
+
+# Steps for this script:
+## - Load in OpenAI GPT 3.5 turbo model
+## - Use pretrained model with few shots learning to create prompts for the responses
+## - Utilise data augmentation on prompts to create a diverse set of prompts
+## - Format data for finetuning (.jsonl)
+
 client = OpenAI(
     # This is the default and can be omitted
     api_key=os.environ.get("OPENAI_API_KEY"),

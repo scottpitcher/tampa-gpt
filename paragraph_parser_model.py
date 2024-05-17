@@ -67,8 +67,7 @@ paragraphs = []
 # Formattng examples for fine-tuning
 system_prompt = message_template[0]["content"]
 print(system_prompt)
+
 # Using the new text_processing function, we will create examples from the paragraphs in the above variables
-
 for paragraph in paragraphs:
-    
-
+    print("hi")
