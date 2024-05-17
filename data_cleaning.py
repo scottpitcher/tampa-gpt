@@ -3,7 +3,27 @@ from openai import OpenAI
 import os
 import pandas as pd
 
+# Goal: Using the paragraph parsing model created in the respective script, we will use that to loop over all raw paragraphs of text data to create independent lines of information about Tampa.
+# Purpose: To create response data for the fine-tuning job. 
 
+# Steps for this script:
+## - Create OpenAI client
+## - Load in fine-tuned model from paragraph_parser_model
+## - Loop over all text data in the /data folder in the AWS S3 bucket
+## - Save those lines of informatio to another S3 bucket /cleaned_data
+
+
+
+## Retrieving web-scraped data from AWS S3 bucket
+# Create an S3 client
+s3 = boto3.client('s3')
+bucket_name = 'tampa-ai'
+
+# Initializing the openai client for text processing
+client = OpenAI(
+    # This is the default and can be omitted
+    api_key=os.environ.get("OPENAI_API_KEY"),
+)
 
 def break_up_text(text):
     """
