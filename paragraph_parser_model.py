@@ -1,7 +1,9 @@
 import boto3
 from openai import OpenAI
+import openai
 import os
 import pandas as pd
+import json
 
 # Goal: Create a fine-tuned model of GPT 3.5 that reads in a paragraph of information and generates independent lines of information.
 # Purpose: When preparing text data for fine-tuning Tampa.AI model, we will need to utilise this model several times; more computationally and financially efficient to fine-tune as compared to few-shot learning
@@ -11,7 +13,7 @@ import pandas as pd
 ## - Use a pretrained GPT 3.5-turbo model to create examples (10-15 as this task is not too technical) for fine-tuning job
 ## - Check outputs
 ## - Create .jsonl format for fine-tuning with examples
-## - Create fine-tune job and save model for use in data preparation
+## - Create fine-tune job and save model for use in data_cleaning.py
 
 ## Retrieving web-scraped data from AWS S3 bucket
 # Create an S3 client
@@ -24,20 +26,19 @@ client = OpenAI(
     api_key=os.environ.get("OPENAI_API_KEY"),
 )
 
-
-
+# Messages template used for few-shots learning to develop more examples for fine-tuning job
 message_template = [
         # Initial system prompt
         {"role": "system","content": "You are a helpful assistant whose goal is to read in the user's paragraph and break the paragraph into separate lines of independent information, ensuring each line can be read without context from the input or other lines. Each line should start with a clear subject and avoid using pronouns that refer to other lines."},    
         # Ex. user input 1
-        {"role": "user","content": f"Tampa is famous for its vibrant waterfront parks, beautiful sunsets, and lively cultural scene. The best time to visit is during spring."},
+        {"role": "user","content": "Tampa is famous for its vibrant waterfront parks, beautiful sunsets, and lively cultural scene. The best time to visit is during spring."},
         # Ex. assistant output 1
         {"role": "assistant","content":"""Tampa is famous for vibrant waterfront parks.
         Tampa has beautiful sunsets.
         Tampa has a lively cultural scene.
         The best time to visit Tampa is during spring."""},
         # Ex. user input 2
-        {"role": "user","content": f"New York City, a city within New York State, is the most populated city in the country. Even though the city is expensive to live in, there are many things to do there!"},
+        {"role": "user","content": "New York City, a city within New York State, is the most populated city in the country. Even though the city is expensive to live in, there are many things to do there!"},
         # Ex. assistant output2
         {"role": "assistant","content":"""New York City is a city within New York State.
         NYC is the most populated city in the United States.
@@ -49,7 +50,7 @@ message_template = [
 
 
 def text_processing(line):
-    """Creating a function to read in the file and break up paragraphs with a pretrained model"""
+    """Creating a function to read in the paragraphs and break them up into lines using few-shot learning"""
     messages=message_template.copy()
     messages[5]["content"] = line
 
@@ -61,13 +62,48 @@ def text_processing(line):
     new_line = chat_completion.choices[0].message.content
     return new_line
 
-# Creating examples from paragraphs sourced from 
-paragraphs = []
+# Paragraphs sourced from public websites (e.g. Wikipedia)
+paragraphs = ["New York City, a city within New York State, is the most populated city in the country. Even though the city is expensive to live in, there are many things to do there!",
+              "Downtown Tampa is undergoing significant development and redevelopment in line with a general national trend toward urban residential development. In April 2007, the Tampa Downtown Partnership noted development proceeding on 20 residential, hotel, and mixed-use projects.[128] Many of the new downtown developments were nearing completion in the midst of a housing market slump, which caused numerous projects to be delayed or revamped, and some of the 20 projects TDP lists have not broken ground and are being refinanced.",
+              "The Tampa Bay area has a humid subtropical climate (Köppen Cfa), although due to its location on the Florida peninsula on Tampa Bay and the Gulf of Mexico, it shows some characteristics of a tropical climate. Tampa's climate generally features hot and humid summers with frequent thunderstorms and dry and mild winters. Average highs range from 71 to 91 °F (22 to 33 °C) year round, and lows 53 to 77 °F (12 to 25 °C). The city of Tampa is split between two USDA climate zones. According to the 2012 USDA Plant Hardiness Zone Map, Tampa is listed as USDA zone 9b north of Kennedy Boulevard away from the bay and 10a near the shorelines and in the interbay peninsula south of Kennedy Boulevard. Zone 10a is about the northern limit of where coconut palms and royal palms can be grown, although some specimens do grow in northern Tampa. Recently, certain palm tree species in the area, along with the rest of the state, have been and continue to be severely affected by a plant disease called Texas phoenix palm decline, which has caused a considerable amount of damage to various local palm tree landscapes and threatens the native palm tree species in the region.",
+              "Though threatened by tropical systems almost every hurricane season (which runs from June 1 to November 30), Tampa seldom feels major effects from tropical storms or hurricanes. No hurricane has made landfall in the immediate Tampa Bay area since the category 4 1921 Tampa Bay hurricane made landfall near Tarpon Springs and caused extensive damage throughout the region.",
+              "Tampa was founded as a military center during the 19th century with the establishment of Fort Brooke. The cigar industry was also brought to the city by Vincente Martinez Ybor, after whom Ybor City is named. Tampa was reincorporated as a city in 1887 following the Civil War. Tampa's economy is driven by tourism, health care, finance, insurance, technology, construction, and the maritime industry.[12] The bay's port is the largest in the state, responsible for over $15 billion in economic impact.[13]",
+              "Taylor Alison Swift (born December 13, 1989) is an American singer-songwriter. A subject of widespread public interest with a vast fanbase, she has influenced the music industry, popular culture, and politics through her songwriting, artistry, entrepreneurship, and advocacy.",
+              "Tampa has a diverse culinary scene from small cafes and bakeries to bistros and farm-to-table restaurants. The food of Tampa has a history of Cuban, Spanish, Floribbean and Italian cuisines. There are also many Colombian, Puerto Rican, Vietnamese and barbecue restaurants. Seafood is very popular in Tampa, and Greek cuisine is prominent in the area, including around Tarpon Springs. Food trucks are popular, and the area holds the record for the world's largest food truck rally. In addition to Ybor, the areas of Seminole Heights and South Tampa are known for their restaurants.",
+              ]
 
 # Formattng examples for fine-tuning
 system_prompt = message_template[0]["content"]
 print(system_prompt)
 
+
+with open("parser_data.jsonl", 'w') as outfile: # Using 'w' instead of 'a' to ensure a blank starting file
 # Using the new text_processing function, we will create examples from the paragraphs in the above variables
-for paragraph in paragraphs:
-    print("hi")
+    for paragraph in paragraphs:
+        example_messages = []
+        example_messages.append({"role":"system", "content":system_prompt})
+        example_messages.append({"role":"user", "content":paragraph})
+        example_messages.append({"role":"assistant", "content":text_processing(paragraph)})
+
+        processed_lines = json.dumps({"messages":example_messages}) +"\n"
+        
+        outfile.write(processed_lines)
+
+# Upload fine-tune files
+with open("parser_data.jsonl", 'rb') as file:
+    response = client.files.create(
+        file = file,
+        purpose = "fine-tune",
+    )
+response
+
+file_id = response.id
+print(f"File uploaded successfully with ID: {file_id}")
+
+# Create fine-tune job
+ft_response = client.fine_tuning.jobs.create(
+  training_file= str(file_id), 
+  model="gpt-3.5-turbo",
+)
+
+print(ft_response)

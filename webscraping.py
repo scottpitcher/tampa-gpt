@@ -12,8 +12,8 @@ bucket_name = 'tampa-ai'
 file_key = 'data.txt'  
 
 # sitemap_sections = {'https://www.tampabay.com/resources/sitemaps/tampa-bay-times-content-sitemap-48.xml':'https://www.tampabay.com/life-culture/'}
-
 sitemaps = ["https://www.tampabay.com/resources/sitemaps/tampa-bay-times-content-sitemap-48.xml"]
+
 # Resetting the data file when rerunning the script to ensure no duplicates
 with open("data.txt", "w") as file:
     pass

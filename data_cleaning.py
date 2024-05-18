@@ -22,7 +22,7 @@ bucket_name = 'tampa-ai'
 # Initializing the openai client for text processing
 client = OpenAI(
     # This is the default and can be omitted
-    api_key=os.environ.get("OPENAI_API_KEY"),
+    api_key=os.environ.get("OPENAI_API_KEY")
 )
 
 def break_up_text(text):
