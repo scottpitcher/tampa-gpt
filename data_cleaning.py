@@ -12,7 +12,8 @@ import pandas as pd
 ## - Loop over all text data in the /data folder in the AWS S3 bucket
 ## - Save those lines of informatio to another S3 bucket /cleaned_data
 
-
+# Setting parameters
+temperature = 0.3
 
 ## Retrieving web-scraped data from AWS S3 bucket
 # Create an S3 client
@@ -25,6 +26,17 @@ client = OpenAI(
     api_key=os.environ.get("OPENAI_API_KEY")
 )
 
+def parser_model(text):
+    chat_completion = client.chat.completions.create(
+        model="ft:gpt-3.5-turbo-0125:personal::9QIRc8ME",
+        temperature=temperature,
+        messages = [{"role": "system","content": "You are a helpful assistant whose goal is to read in the user's paragraph and break the paragraph into separate lines of independent information, ensuring each line can be read without context from the input or other lines. Each line should start with a clear subject and avoid using pronouns that refer to other lines."},    
+                {"role":"user","content":"Obtain and write out all independent points of information in the following paragraph: "+text}])
+    
+    lines = chat_completion.choices[0].message.content
+    return lines
+
+
 def break_up_text(text):
     """
     If a list of strings is inputted, it will loop through each element and return it as a full body of text
@@ -35,17 +47,17 @@ def break_up_text(text):
         
         # Loop through every item of the list, and adding that to a main corpus
         for line in text:
-            if len(line) < 10:
+            if len(line) <= 20: # Ignoring very short lines
                 continue
-            new_lines = text_processing(line)
-            print(f"input:\n{line}\noutput:\n{new_lines}")
+            new_lines = parser_model(line)
+            # print(f"input:\n{line}\noutput:\n{new_lines}")
             new_text += new_lines       
         
         return(new_text)
     
     elif isinstance(text, str):      
-        new_lines = text_processing(text)
-        print(f"input:\n{text}\noutput:\n{new_lines}")
+        new_lines = parser_model(text)
+        # print(f"input:\n{text}\noutput:\n{new_lines}")
         
         return (new_lines)
     

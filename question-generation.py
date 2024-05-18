@@ -1,6 +1,8 @@
 from openai import OpenAI
 import os
 import pandas as pd
+import boto3
+
 
 # Goal: Use the independent lines of information to create prompts for fine-tuning job.
 # Purpose: Final set of preparation for model fine-tuning.
@@ -11,8 +13,12 @@ import pandas as pd
 ## - Utilise data augmentation on prompts to create a diverse set of prompts
 ## - Format data for finetuning (.jsonl)
 
+## Retrieving web-scraped data from AWS S3 bucket
+# Create an S3 client
+s3 = boto3.client('s3')
+bucket_name = 'tampa-ai'
+
 client = OpenAI(
-    # This is the default and can be omitted
     api_key=os.environ.get("OPENAI_API_KEY"),
 )
 
@@ -38,6 +44,3 @@ def generate_questions(responses):
     
     return(prompt_responses)
 
-prompt_responses = pd.DataFrame(generate_questions(responses))
-
-prompt_responses.head()
