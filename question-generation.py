@@ -25,23 +25,15 @@ def generate_questions(responses):
     for response in responses:
         chat_completion = client.chat.completions.create(
             model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system",
-                "content": "You are a helpful assistant ."},
-                
-                {"role": "user", 
-                
-                "content": f""" Here are some examples of questions and answers:
-                \n1. What is Tampa known for? -> Tampa is known for its vibrant waterfront parks.\n
-                2. When is the best time to visit Tampa? -> The best time is during the spring.
-                \nGenerate a question for the answer: {response}"""
-                
-                }
-            ]
+            messages=[{"role": "system","content": "You are a helpful assistant whose goal is to create prompts/questions for statements."},              
+                {"role": "user", "content": "Create a prompt for the following statement: Tampa is known for its vibrant waterfront parks."},
+                {"role": "assistant", "content": "What is Tampa known for?"},
+                {"role": "user", "content": "Create a prompt for the following statement: The best time is during the spring."},
+                {"role": "assistant", "content": "When is the best time to visit Tampa?"},
+                {"role":"user","content":f"Create a prompt for the following statement: {response}"}]
         )
         prompt = chat_completion.choices[0].message.content
         
-        print(f"Prompt: {prompt}\n Response: {response}")
         prompt_responses[response]= prompt
     
     return(prompt_responses)
