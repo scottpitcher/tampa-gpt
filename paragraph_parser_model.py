@@ -41,7 +41,7 @@ def text_processing(line):
     """Creating a function to read in the paragraphs and break them up into lines using few-shot learning"""
     messages = copy.deepcopy(message_template)
     messages[5]["content"] += line
-    print("\nmessage:",messages[5]["content"],"\n")
+    # print("\nmessage:",messages[5]["content"],"\n")
 
     chat_completion = client.chat.completions.create(
     model="gpt-3.5-turbo",
@@ -49,7 +49,7 @@ def text_processing(line):
     )
 
     new_line = chat_completion.choices[0].message.content
-    print("\nnew line: ",new_line,"\n")
+    # print("\nnew line: ",new_line,"\n")
     return new_line
 
 
