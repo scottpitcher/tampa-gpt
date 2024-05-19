@@ -28,7 +28,7 @@ client = OpenAI(
 
 def parser_model(text):
     chat_completion = client.chat.completions.create(
-        model="ft:gpt-3.5-turbo-0125:personal::9QIRc8ME",
+        model="ft:gpt-3.5-turbo-0125:personal::9QcHAoxy",
         temperature=temperature,
         messages = [{"role": "system","content": "You are a helpful assistant whose goal is to read in the user's paragraph and break the paragraph into separate lines of independent information, ensuring each line can be read without context from the input or other lines. Each line should start with a clear subject and avoid using pronouns that refer to other lines."},    
                 {"role":"user","content":"Obtain and write out all independent points of information in the following paragraph: "+text}])
